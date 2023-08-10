@@ -1,9 +1,11 @@
 [workspace]
 default-members = [
-    "relay"
+    "relay",
+    "host"
 ]
 members = [
     "methods",
+    "host",
     "relay"
 ]
 
