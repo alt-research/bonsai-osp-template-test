@@ -2164,6 +2164,7 @@ dependencies = [
  "clap",
  "env_logger",
  "ethabi",
+ "hex",
  "impl-serde",
  "log",
  "parity-scale-codec",

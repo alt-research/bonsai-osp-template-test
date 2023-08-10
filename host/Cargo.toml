@@ -12,6 +12,7 @@ serde_json = "1.0.104"
 impl-serde = "0.4.0"
 ethabi = { version = "18.0", default-features = false }
 clap = { version = "4.3", features = ["derive", "env"] }
+hex = "0.4.3"
 
 codec = { package = "parity-scale-codec", version = "3.0", features = ["derive"] }
 wasmi = { git = "https://github.com/alt-research/accel-wasmi", branch = "risc0" }

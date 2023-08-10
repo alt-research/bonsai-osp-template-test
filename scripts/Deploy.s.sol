@@ -55,7 +55,12 @@ contract Starter is Script, BonsaiCheats {
         bytes32 imageId = uploadImage(methodName, bonsaiApiUrl, bonsaiApiKey);
         
         // Deploy a new starter instance (or replace with deployment of your own contract here)
-        BonsaiStarter starter = new BonsaiStarter(bonsaiRelay, imageId);
+        // TODO: code root from run
+        BonsaiStarter starter = new BonsaiStarter(
+            bonsaiRelay, imageId,
+            0x7080aa6f23c6857049c90bc7103a883b2fbe2f4ab895834a06a87a18d9a60a87,
+            0xccc2d8707343c7348538f6d0114fab4e20437ec900592ba0d126fab4e19648fe
+        );
 
         console.logBytes32(imageId);
         console.logAddress(address(starter));
