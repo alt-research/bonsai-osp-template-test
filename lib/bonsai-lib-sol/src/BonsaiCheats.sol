@@ -30,10 +30,12 @@ abstract contract BonsaiCheats is StdCheatsSafe, CommonBase {
 
     /// @notice Returns the journal resulting from running the guest with @imageId using @input.
     function queryImageOutput(bytes32 imageId, bytes memory input) internal returns (bytes memory) {
-        string[] memory imageRunnerInput = new string[](6);
+        string[] memory imageRunnerInput = new string[](8);
         uint i = 0;
         imageRunnerInput[i++] = 'cargo';
         imageRunnerInput[i++] = 'run';
+        imageRunnerInput[i++] = '--bin';
+        imageRunnerInput[i++] = 'bonsai-ethereum-relay-cli';
         imageRunnerInput[i++] = '-q';
         imageRunnerInput[i++] = 'query';
         imageRunnerInput[i++] = abi.encodePacked(imageId).toHexString();
@@ -43,10 +45,12 @@ abstract contract BonsaiCheats is StdCheatsSafe, CommonBase {
 
     /// @notice Returns the image id of the guest with the specified name.
     function queryImageId(string memory binaryName) internal returns (bytes32) {
-        string[] memory imageRunnerInput = new string[](5);
+        string[] memory imageRunnerInput = new string[](7);
         uint i = 0;
         imageRunnerInput[i++] = 'cargo';
         imageRunnerInput[i++] = 'run';
+        imageRunnerInput[i++] = '--bin';
+        imageRunnerInput[i++] = 'bonsai-ethereum-relay-cli';
         imageRunnerInput[i++] = '-q';
         imageRunnerInput[i++] = 'query';
         imageRunnerInput[i++] = binaryName;
@@ -55,10 +59,12 @@ abstract contract BonsaiCheats is StdCheatsSafe, CommonBase {
 
     /// @notice Returns the image id of the guest with the specified name.
     function uploadImage(string memory binaryName, string memory bonsaiApiUrl, string memory bonsaiApiKey) internal returns (bytes32) {
-        string[] memory imageRunnerInput = new string[](7);
+        string[] memory imageRunnerInput = new string[](9);
         uint i = 0;
         imageRunnerInput[i++] = 'cargo';
         imageRunnerInput[i++] = 'run';
+        imageRunnerInput[i++] = '--bin';
+        imageRunnerInput[i++] = 'bonsai-ethereum-relay-cli';
         imageRunnerInput[i++] = '-q';
         imageRunnerInput[i++] = 'upload';
         imageRunnerInput[i++] = binaryName;

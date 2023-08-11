@@ -36,17 +36,35 @@ fn main() {
     // Type array passed to `ethabi::decode_whole` should match the types encoded in
     // the application contract.
     // abi.encode(instRoot, funcRoot, proof)
-    let input = ethabi::decode(&[ParamType::FixedBytes(32), ParamType::FixedBytes(32), ParamType::Bytes], &input_bytes).unwrap();
-    
-    let inst_root: [u8; 32] = input[0].clone().into_fixed_bytes().unwrap().try_into().unwrap();
-    let func_root: [u8; 32] = input[1].clone().into_fixed_bytes().unwrap().try_into().unwrap();
+    let input = ethabi::decode(
+        &[
+            ParamType::FixedBytes(32),
+            ParamType::FixedBytes(32),
+            ParamType::Bytes,
+        ],
+        &input_bytes,
+    )
+    .unwrap();
+
+    let inst_root: [u8; 32] = input[0]
+        .clone()
+        .into_fixed_bytes()
+        .unwrap()
+        .try_into()
+        .unwrap();
+    let func_root: [u8; 32] = input[1]
+        .clone()
+        .into_fixed_bytes()
+        .unwrap()
+        .try_into()
+        .unwrap();
     let osp_proof_bytes = input[2].clone().into_bytes().unwrap();
 
     // run osp proof
     let mut osp_proof: OspProof<EthConfig> =
         Decode::decode(&mut &*osp_proof_bytes).expect("osp proof");
     let code_proof = CodeProof::<MerkleKeccak256> {
-        func_root, 
+        func_root,
         inst_root,
     };
 
@@ -59,5 +77,8 @@ fn main() {
 
     // Commit the journal that will be received by the application contract.
     // Encoded types should match the args expected by the application callback.
-    env::commit_slice(&ethabi::encode(&[Token::FixedBytes(pre_root), Token::FixedBytes(proof_hash)]));
+    env::commit_slice(&ethabi::encode(&[
+        Token::FixedBytes(pre_root),
+        Token::FixedBytes(proof_hash),
+    ]));
 }

@@ -1,4 +1,4 @@
-use bonsai_starter_methods::{OSP_PROOF_ELF, OSP_PROOF_ID};
+use bonsai_starter_methods::{OSPPROOF_ELF, OSPPROOF_ID};
 use clap::Parser;
 use ethabi::{ethereum_types::H256, ParamType};
 use risc0_zkvm::default_executor_from_elf;
@@ -37,7 +37,7 @@ fn main() {
     let env = create_env(args.step).expect("create env failed");
 
     // Next, we make an executor, loading the (renamed) ELF binary.
-    let mut exec = default_executor_from_elf(env, OSP_PROOF_ELF).unwrap();
+    let mut exec = default_executor_from_elf(env, OSPPROOF_ELF).unwrap();
 
     // Run the executor to produce a session.
     let session = exec.run().unwrap();
@@ -47,7 +47,7 @@ fn main() {
 
     // Optional: Verify receipt to confirm that recipients will also be able to
     // verify your receipt
-    receipt.verify(OSP_PROOF_ID).unwrap();
+    receipt.verify(OSPPROOF_ID).unwrap();
 
     log::trace!("receipt {:?}", receipt);
 
