@@ -1,9 +1,9 @@
+use methods::{OSPPROOF_ELF, OSPPROOF_ID};
 use clap::Parser;
 use ethabi::{
     ethereum_types::{H256},
     ParamType, 
 };
-use methods::{OSP_PROOF_ELF, OSP_PROOF_ID};
 use risc0_zkvm::{default_prover};
 
 mod osp;
@@ -43,11 +43,11 @@ fn main() {
     let prover = default_prover();
 
     // Produce a receipt by proving the specified ELF binary.
-    let receipt = prover.prove_elf(env, OSP_PROOF_ELF).unwrap();
+    let receipt = prover.prove_elf(env, OSPPROOF_ELF).unwrap();
 
     // Optional: Verify receipt to confirm that recipients will also be able to
     // verify your receipt
-    receipt.verify(OSP_PROOF_ID).unwrap();
+    receipt.verify(OSPPROOF_ID).unwrap();
 
     log::trace!("receipt {:?}", receipt);
 
