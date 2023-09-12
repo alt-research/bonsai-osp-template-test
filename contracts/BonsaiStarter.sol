@@ -23,47 +23,47 @@ import {BonsaiCallbackReceiver} from "bonsai/BonsaiCallbackReceiver.sol";
 /// @dev This contract demonstrates one pattern for offloading the computation of an expensive
 //       or difficult to implement function to a RISC Zero guest running on Bonsai.
 contract BonsaiStarter is BonsaiCallbackReceiver {
-    /// @notice Cache of the results calculated by our guest program in Bonsai.
-    /// @dev Using a cache is one way to handle the callback from Bonsai. Upon callback, the
-    ///      information from the journal is stored in the cache for later use by the contract.
-    mapping(uint256 => uint256) public fibonacciCache;
+    mapping(bytes32 => bytes32) public stateCache;
+    
+    /// @notice the inst root for execute
+    bytes32 public instRoot;
+
+    /// @notice the func root for execute
+    bytes32 public funcRoot;
 
     /// @notice Image ID of the only zkVM binary to accept callbacks from.
-    bytes32 public immutable fibImageId;
+    bytes32 public immutable imageID;
 
     /// @notice Gas limit set on the callback from Bonsai.
     /// @dev Should be set to the maximum amount of gas your callback might reasonably consume.
     uint64 private constant BONSAI_CALLBACK_GAS_LIMIT = 100000;
 
     /// @notice Initialize the contract, binding it to a specified Bonsai relay and RISC Zero guest image.
-    constructor(IBonsaiRelay bonsaiRelay, bytes32 _fibImageId) BonsaiCallbackReceiver(bonsaiRelay) {
-        fibImageId = _fibImageId;
+    constructor(IBonsaiRelay bonsaiRelay, bytes32 _imageID, bytes32 _instRoot, bytes32 _funcRoot) BonsaiCallbackReceiver(bonsaiRelay) {
+        imageID = _imageID;
+        instRoot = _instRoot;
+        funcRoot = _funcRoot;
     }
 
-    event CalculateFibonacciCallback(uint256 indexed n, uint256 result);
+    event ExecuteOneStepCallback(bytes32 instRoot, bytes32 funcRoot, bytes32 indexed preState, bytes32 postState);
 
-    /// @notice Returns nth number in the Fibonacci sequence.
-    /// @dev The sequence is defined as 1, 1, 2, 3, 5 ... with fibonacci(0) == 1.
-    ///      Only precomputed results can be returned. Call calculate_fibonacci(n) to precompute.
-    function fibonacci(uint256 n) external view returns (uint256) {
-        uint256 result = fibonacciCache[n];
+    /// @notice Returns the post state after execute one step based on per state.
+    function getPostState(bytes32 preState) external view returns (bytes32) {
+        bytes32 result = stateCache[preState];
         require(result != 0, "value not available in cache");
         return result;
     }
 
     /// @notice Callback function logic for processing verified journals from Bonsai.
-    function storeResult(uint256 n, uint256 result) external onlyBonsaiCallback(fibImageId) {
-        emit CalculateFibonacciCallback(n, result);
-        fibonacciCache[n] = result;
+    function storeResult(bytes32 preState, bytes32 postState) external onlyBonsaiCallback(imageID) {
+        emit ExecuteOneStepCallback(instRoot, funcRoot, preState, postState);
+        stateCache[preState] = postState;
     }
 
-    /// @notice Sends a request to Bonsai to have have the nth Fibonacci number calculated.
-    /// @dev This function sends the request to Bonsai through the on-chain relay.
-    ///      The request will trigger Bonsai to run the specified RISC Zero guest program with
-    ///      the given input and asynchronously return the verified results via the callback below.
-    function calculateFibonacci(uint256 n) external {
+    /// @notice Sends a request to Bonsai to have have the executeOneStep return
+    function executeOneStep(bytes calldata proof) external {
         bonsaiRelay.requestCallback(
-            fibImageId, abi.encode(n), address(this), this.storeResult.selector, BONSAI_CALLBACK_GAS_LIMIT
+            imageID, abi.encode(instRoot, funcRoot, proof), address(this), this.storeResult.selector, BONSAI_CALLBACK_GAS_LIMIT
         );
     }
 }

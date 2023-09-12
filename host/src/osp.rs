@@ -1,11 +1,7 @@
 use anyhow::Result;
 use codec::Encode;
-use impl_serde::serialize as bytes;
-use ethabi::ethereum_types::H256;
-use risc0_zkvm::{
-    serde::to_vec, ExecutorEnv, ExitCode, ReceiptMetadata,
-};
-use serde::Serialize;
+use ethabi::{ethereum_types::H256, Token};
+use risc0_zkvm::{ ExecutorEnv};
 use wasmi::{
     core::Value,
     merkle::{DefaultMemoryConfig, MerkleKeccak256},
@@ -18,9 +14,15 @@ use crate::raw::FIB;
 
 pub type EthConfig = DefaultMemoryConfig<MerkleKeccak256>;
 
-fn setup_module<T>(store: &mut Store<T>, wat: impl AsRef<str>) -> Result<Module, Error> {
+#[allow(dead_code)]
+fn setup_module_from_wat<T>(store: &mut Store<T>, wat: impl AsRef<str>) -> Result<Module, Error> {
     let wasm = parse_str(wat).expect("Illegal wat");
     Module::new(store.engine(), &wasm[..])
+}
+
+#[allow(dead_code)]
+fn setup_module_from_wasm<T>(store: &mut Store<T>, code: &[u8]) -> Result<Module, Error> {
+    Module::new(store.engine(), code)
 }
 
 fn instantiate<T>(store: &mut Store<T>, module: &Module) -> Result<Instance, Error> {
@@ -46,10 +48,12 @@ fn call_step<T>(
     f.step_call(store.as_context_mut(), inputs, outputs, n)
 }
 
-fn gen_osp_proof_for_test() -> Result<(OspProof<EthConfig>, CodeProof<MerkleKeccak256>)> {
+fn gen_osp_proof_for_test(
+    mut steps: u64,
+) -> Result<(OspProof<EthConfig>, CodeProof<MerkleKeccak256>)> {
     let engine = Engine::default();
     let mut store = Store::new(&engine, ());
-    let module = setup_module(&mut store, FIB).unwrap();
+    let module = setup_module_from_wat(&mut store, FIB).unwrap();
     let instance = instantiate(&mut store, &module).unwrap();
 
     let code_merkle = store
@@ -61,8 +65,6 @@ fn gen_osp_proof_for_test() -> Result<(OspProof<EthConfig>, CodeProof<MerkleKecc
     let inputs = vec![Value::I32(10)];
     let mut outputs = vec![Value::I32(0)];
 
-    // change steps to test differnt inst.
-    let mut steps = 10;
     let res = call_step(
         &mut store,
         instance,
@@ -86,28 +88,85 @@ fn gen_osp_proof_for_test() -> Result<(OspProof<EthConfig>, CodeProof<MerkleKecc
     Ok((osp_proof, code_proof))
 }
 
-pub fn create_env<'a>() -> Result<ExecutorEnv<'a>> {
-    let (mut osp_proof, code_proof) = gen_osp_proof_for_test()?;
+pub fn create_env<'a>(step: u64) -> Result<ExecutorEnv<'a>> {
+    let (mut osp_proof, code_proof) = gen_osp_proof_for_test(step)?;
+
+    // for fib :
+    // 0xccc2d8707343c7348538f6d0114fab4e20437ec900592ba0d126fab4e19648fe
+    // 0x7080aa6f23c6857049c90bc7103a883b2fbe2f4ab895834a06a87a18d9a60a87
+    log::info!("code func_root: 0x{}", hex::encode(code_proof.func_root));
+    log::info!("code inst_root: 0x{}", hex::encode(code_proof.inst_root));
 
     let osp_proof_bytes = osp_proof.encode();
-    let code_proof_bytes = code_proof.encode();
 
-    log::info!(
-        "env: osp_proof len {}, code_proof len {}",
-        osp_proof_bytes.len(),
-        code_proof_bytes.len()
-    );
+    log::debug!("env: osp_proof len {}", osp_proof_bytes.len(),);
 
+    let pre_proof_hash = osp_proof.hash();
     osp_proof.run(&code_proof)?;
     let post_proof_hash = osp_proof.hash();
 
-    log::info!("post_proof_hash: {:?}", H256::from(post_proof_hash));
+    log::info!(
+        "executor hash: {:?} -> {:?}",
+        H256::from(pre_proof_hash),
+        H256::from(post_proof_hash)
+    );
 
-    let env = ExecutorEnv::builder()
-        .add_input(&to_vec(&osp_proof_bytes).unwrap())
-        .add_input(&to_vec(&code_proof_bytes).unwrap())
-        .add_input(&to_vec(&post_proof_hash.to_vec()).unwrap())
-        .build()?;
+    log::info!(
+        "code len: {}, {}",
+        code_proof.inst_root.to_vec().len(),
+        code_proof.func_root.to_vec().len()
+    );
+
+    log::info!(
+        "in  0x{} 0x{} 0x{}",
+        hex::encode(code_proof.func_root),
+        hex::encode(code_proof.inst_root),
+        hex::encode(osp_proof_bytes.clone())
+    );
+
+    // abi.encode(instRoot, funcRoot, proof)
+    let data = ethabi::encode(&[
+        Token::FixedBytes(code_proof.inst_root.to_vec()),
+        Token::FixedBytes(code_proof.func_root.to_vec()),
+        Token::Bytes(osp_proof_bytes),
+    ]);
+
+    {
+        // TODO: should use ethabi::decode_whole, but have some errors
+        use ethabi::ParamType;
+        let input = ethabi::decode(
+            &[
+                ParamType::FixedBytes(32),
+                ParamType::FixedBytes(32),
+                ParamType::Bytes,
+            ],
+            &data,
+        )
+        .unwrap();
+
+        let inst_root: [u8; 32] = input[0]
+            .clone()
+            .into_fixed_bytes()
+            .unwrap()
+            .try_into()
+            .unwrap();
+        let func_root: [u8; 32] = input[1]
+            .clone()
+            .into_fixed_bytes()
+            .unwrap()
+            .try_into()
+            .unwrap();
+        let osp_proof_bytes = input[2].clone().into_bytes().unwrap();
+
+        log::info!(
+            "res 0x{} 0x{} 0x{}",
+            hex::encode(func_root),
+            hex::encode(inst_root),
+            hex::encode(osp_proof_bytes)
+        );
+    }
+
+    let env = ExecutorEnv::builder().add_input(&data).build()?;
 
     Ok(env)
 }

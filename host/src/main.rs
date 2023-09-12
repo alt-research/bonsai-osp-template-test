@@ -1,7 +1,10 @@
-use methods::{OSP_PROOF_ELF, OSP_PROOF_ID};
 use clap::Parser;
-use ethabi::{ethereum_types::{H256, U256}, ParamType, Token};
-use risc0_zkvm::{default_prover, ExecutorEnv};
+use ethabi::{
+    ethereum_types::{H256},
+    ParamType, 
+};
+use methods::{OSP_PROOF_ELF, OSP_PROOF_ID};
+use risc0_zkvm::{default_prover};
 
 mod osp;
 mod raw;
@@ -11,21 +14,30 @@ use osp::*;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// frontier
+    /// the inst step for executor osp proof
     #[arg(short, long)]
-    n: u64,
+    step: u64,
+
+    /// if show debug log
+    #[arg(short, long, default_value = "false")]
+    debug: bool,
 }
 
 fn main() {
+    let args = Args::parse();
+    let log_level = if args.debug {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Info
+    };
+
     let _ = env_logger::Builder::from_default_env()
         .format_module_path(true)
         .format_level(true)
-        .filter_level(log::LevelFilter::Debug)
+        .filter_level(log_level)
         .try_init();
 
-    let _args = Args::parse();
-
-    let env = create_env().expect("create env failed");
+    let env = create_env(args.step).expect("create env failed");
 
     // Obtain the default prover.
     let prover = default_prover();
@@ -39,13 +51,25 @@ fn main() {
 
     log::trace!("receipt {:?}", receipt);
 
-    // let output = ethabi::decode_whole(
-    //    &[ParamType::Uint(256), ParamType::Uint(256)],
-    //    &receipt.journal,
-    //)
-    //.expect("decode journal failed");
+    // function storeResult(bytes32 preState, bytes32 postState)
+    let output = ethabi::decode_whole(
+        &[ParamType::FixedBytes(32), ParamType::FixedBytes(32)],
+        &receipt.journal,
+    )
+    .expect("decode journal failed");
 
-    let post_hash = H256::from_slice(&receipt.journal);
+    let per_hash = H256::from_slice(
+        &output[0]
+            .clone()
+            .into_fixed_bytes()
+            .expect("decode pre-hash failed"),
+    );
+    let post_hash = H256::from_slice(
+        &output[1]
+            .clone()
+            .into_fixed_bytes()
+            .expect("decode post-hash failed"),
+    );
 
-    log::info!("journal result: {:?}", post_hash);
+    log::info!("journal result: {:?} -> {:?}", per_hash, post_hash);
 }
