@@ -91,6 +91,10 @@ struct GlobalOpts {
     /// zkVM program and no proof is generated.
     #[arg(long, env, global = true, default_value_t = false)]
     risc0_dev_mode: bool,
+
+    /// Show debug log
+    #[arg(long, global = true, default_value_t = false)]
+    debug: bool
 }
 
 #[derive(Parser)]
@@ -136,6 +140,18 @@ fn tokenize_snark_proof(proof: &SnarkProof) -> anyhow::Result<Token> {
 async fn main() -> anyhow::Result<()> {
     let args = App::parse();
     let dev_mode = args.global_opts.risc0_dev_mode;
+
+    let log_level = if args.global_opts.debug {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Info
+    };
+
+    let _ = env_logger::Builder::from_default_env()
+    .format_module_path(true)
+    .format_level(true)
+    .filter_level(log_level)
+    .try_init();
 
     match args.command {
         Command::Query {

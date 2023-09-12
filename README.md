@@ -11,19 +11,13 @@ anvil
 Deploy the `BonsaiRelay` contract by running:
 
 ```bash
-forge script scripts/Deploy.s.sol:Relay --rpc-url http://localhost:8545 --broadcast
+RISC0_DEV_MODE=true forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast
 ```
 
 If use local prove, Start the Bonsai Ethereum Relay by running:
 
 ```bash
-RELAY_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3 BONSAI_API_URL=http://localhost:8081 BONSAI_API_KEY=none ./target/release/bonsai-ethereum-relay-cli run 
-```
-
-Deploy contract:
-
-```bash
-RELAY_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3 BONSAI_API_URL=http://localhost:8081 BONSAI_API_KEY=none METHOD_NAME=OSPPROOF forge script scripts/Deploy.s.sol:Starter --rpc-url http://localhost:8545 --broadcast
+RISC0_DEV_MODE=true cargo run --bin bonsai-ethereum-relay-cli -- run --relay-address "0x5FbDB2315678afecb367f032d93F642f64180aa3"
 ```
 
 Send a transaction to the starter contract:
@@ -44,28 +38,19 @@ will return `0x6b5bc5b43331c950fb9dd63a6dacbc7d4070ad514296d833d95538986adeceb9`
 
 ## Bonsai test
 
-start a eth testnet
-
-```bash
-anvil
-```
-
-Deploy the `BonsaiRelay` contract by running:
-
-```bash
-forge script scripts/Deploy.s.sol:Relay --rpc-url http://localhost:8545 --broadcast
-```
+Based on local test
 
 Start the Bonsai Ethereum Relay by running:
 
 ```bash
-RELAY_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3 BONSAI_API_URL=https://api.bonsai.xyz BONSAI_API_KEY={key} ./target/release/bonsai-ethereum-relay-cli run 
+cargo run --bin bonsai-ethereum-relay-cli -- run --relay-address "0x5FbDB2315678afecb367f032d93F642f64180aa3" --bonsai-api-url https://api.bonsai.xyz --bonsai-api-key {key}
 ```
 
-Deploy contract:
+or 
 
 ```bash
-RELAY_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3 BONSAI_API_URL=https://api.bonsai.xyz BONSAI_API_KEY={key} METHOD_NAME=OSPPROOF forge script scripts/Deploy.s.sol:Starter --rpc-url http://localhost:8545 --broadcast
+cargo build --release
+./target/release/bonsai-ethereum-relay-cli run --relay-address "0x5FbDB2315678afecb367f032d93F642f64180aa3" --bonsai-api-url https://api.bonsai.xyz --bonsai-api-key {key} --debug
 ```
 
 Send a transaction to the starter contract:

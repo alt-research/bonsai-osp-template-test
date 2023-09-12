@@ -34,9 +34,11 @@ contract Deploy is Script, BonsaiCheats, BonsaiDeploy {
         uploadImages();
 
         // TEMPLATE: Modify this block to match your expected deployment.
-        bytes32 imageId = queryImageId("FIBONACCI");
-        console2.log("Image ID for FIBONACCI is ", vm.toString(imageId));
-        BonsaiStarter app = new BonsaiStarter(bonsaiRelay, imageId);
+        bytes32 imageId = queryImageId("OSPPROOF");
+        console2.log("Image ID for OSPPROOF is ", vm.toString(imageId));
+        BonsaiStarter app = new BonsaiStarter(bonsaiRelay, imageId,
+            0x7080aa6f23c6857049c90bc7103a883b2fbe2f4ab895834a06a87a18d9a60a87,
+            0xccc2d8707343c7348538f6d0114fab4e20437ec900592ba0d126fab4e19648fe);
         console2.log("Deployed BonsaiStarter to ", address(app));
 
         vm.stopBroadcast();
