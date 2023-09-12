@@ -94,7 +94,7 @@ struct GlobalOpts {
 
     /// Show debug log
     #[arg(long, global = true, default_value_t = false)]
-    debug: bool
+    debug: bool,
 }
 
 #[derive(Parser)]
@@ -148,10 +148,10 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let _ = env_logger::Builder::from_default_env()
-    .format_module_path(true)
-    .format_level(true)
-    .filter_level(log_level)
-    .try_init();
+        .format_module_path(true)
+        .format_level(true)
+        .filter_level(log_level)
+        .try_init();
 
     match args.command {
         Command::Query {

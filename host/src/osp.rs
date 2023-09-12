@@ -1,7 +1,7 @@
 use anyhow::Result;
 use codec::Encode;
 use ethabi::{ethereum_types::H256, Token};
-use risc0_zkvm::{ ExecutorEnv};
+use risc0_zkvm::ExecutorEnv;
 use wasmi::{
     core::Value,
     merkle::{DefaultMemoryConfig, MerkleKeccak256},

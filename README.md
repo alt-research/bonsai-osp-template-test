@@ -46,7 +46,7 @@ Start the Bonsai Ethereum Relay by running:
 cargo run --bin bonsai-ethereum-relay-cli -- run --relay-address "0x5FbDB2315678afecb367f032d93F642f64180aa3" --bonsai-api-url https://api.bonsai.xyz --bonsai-api-key {key}
 ```
 
-or 
+or
 
 ```bash
 cargo build --release

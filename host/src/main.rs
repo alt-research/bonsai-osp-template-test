@@ -1,10 +1,7 @@
-use methods::{OSPPROOF_ELF, OSPPROOF_ID};
 use clap::Parser;
-use ethabi::{
-    ethereum_types::{H256},
-    ParamType, 
-};
-use risc0_zkvm::{default_prover};
+use ethabi::{ethereum_types::H256, ParamType};
+use methods::{OSPPROOF_ELF, OSPPROOF_ID};
+use risc0_zkvm::default_prover;
 
 mod osp;
 mod raw;
